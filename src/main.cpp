@@ -1,129 +1,88 @@
- 
-#define GLAD_GL_IMPLEMENTATION
-#include <glad/gl.h>
-#define GLFW_INCLUDE_NONE
+#include <iostream>
+#include <GL/glew.h>
 #include <GLFW/glfw3.h>
- 
+// #include <glm/glm.hpp>
+// #include <glm/gtc/matrix_transform.hpp>
+// #include <glm/gtc/type_ptr.hpp>
+#include <vector>
 #include "linmath.h"
- 
-#include <stdlib.h>
-#include <stddef.h>
-#include <stdio.h>
+#define WIDTH 480
+#define HEIGHT 480
+#define DELTA_T 0.001
 
-// globals
-const int WIDTH = 800;
-const int HEIGHT = 600;
-
-typedef struct Vertex
-{
-    vec2 pos;
-    vec3 col;
-} Vertex;
- 
-static const Vertex vertices[3] =
-{
-    { { -0.6f, -0.4f }, { 1.f, 0.f, 0.f } },
-    { {  0.6f, -0.4f }, { 0.f, 1.f, 0.f } },
-    { {   0.f,  0.6f }, { 0.f, 0.f, 1.f } }
-};
- 
-static void error_callback(int error, const char* description)
-{
-    fprintf(stderr, "Error: %s\n", description);
-}
- 
-static void key_callback(GLFWwindow* window, int key, int scancode, int action, int mods)
-{
-    if (key == GLFW_KEY_ESCAPE && action == GLFW_PRESS)
-        glfwSetWindowShouldClose(window, GLFW_TRUE);
-}
- 
-int main(void)
-{
-    glfwSetErrorCallback(error_callback);
- 
-    if (!glfwInit())
-        exit(EXIT_FAILURE);
- 
-    glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
-    glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
-    glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
- 
-    GLFWwindow* window = glfwCreateWindow(
-        HEIGHT, WIDTH, "OpenGL window", NULL, NULL);
-    if (!window)
-    {
-        glfwTerminate();
-        exit(EXIT_FAILURE);
+class Engine{
+    public:
+        GLFWwindow* window;
+    Engine(){
+        this->window = StartGLFW();
     }
- 
-    glfwSetKeyCallback(window, key_callback);
- 
-    glfwMakeContextCurrent(window);
-    gladLoadGL(glfwGetProcAddress);
-    glfwSwapInterval(1);
- 
-    // NOTE: OpenGL error checks have been omitted for brevity
- 
-    GLuint vertex_buffer;
-    glGenBuffers(1, &vertex_buffer);
-    glBindBuffer(GL_ARRAY_BUFFER, vertex_buffer);
-    glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
- 
-    const GLuint vertex_shader = glCreateShader(GL_VERTEX_SHADER);
-    glShaderSource(vertex_shader, 1, &vertex_shader_text, NULL);
-    glCompileShader(vertex_shader);
- 
-    const GLuint fragment_shader = glCreateShader(GL_FRAGMENT_SHADER);
-    glShaderSource(fragment_shader, 1, &fragment_shader_text, NULL);
-    glCompileShader(fragment_shader);
- 
-    const GLuint program = glCreateProgram();
-    glAttachShader(program, vertex_shader);
-    glAttachShader(program, fragment_shader);
-    glLinkProgram(program);
- 
-    const GLint mvp_location = glGetUniformLocation(program, "MVP");
-    const GLint vpos_location = glGetAttribLocation(program, "vPos");
-    const GLint vcol_location = glGetAttribLocation(program, "vCol");
- 
-    GLuint vertex_array;
-    glGenVertexArrays(1, &vertex_array);
-    glBindVertexArray(vertex_array);
-    glEnableVertexAttribArray(vpos_location);
-    glVertexAttribPointer(vpos_location, 2, GL_FLOAT, GL_FALSE,
-                          sizeof(Vertex), (void*) offsetof(Vertex, pos));
-    glEnableVertexAttribArray(vcol_location);
-    glVertexAttribPointer(vcol_location, 3, GL_FLOAT, GL_FALSE,
-                          sizeof(Vertex), (void*) offsetof(Vertex, col));
- 
-    while (!glfwWindowShouldClose(window))
-    {
-        int width, height;
-        glfwGetFramebufferSize(window, &width, &height);
-        const float ratio = width / (float) height;
- 
-        glViewport(0, 0, width, height);
-        glClear(GL_COLOR_BUFFER_BIT);
- 
-        mat4x4 m, p, mvp;
-        mat4x4_identity(m);
-        mat4x4_rotate_Z(m, m, (float) glfwGetTime());
-        mat4x4_ortho(p, -ratio, ratio, -1.f, 1.f, 1.f, -1.f);
-        mat4x4_mul(mvp, p, m);
- 
-        glUseProgram(program);
-        glUniformMatrix4fv(mvp_location, 1, GL_FALSE, (const GLfloat*) &mvp);
-        glBindVertexArray(vertex_array);
-        glDrawArrays(GL_TRIANGLES, 0, 3);
- 
+    GLFWwindow* StartGLFW(){
+        if(!glfwInit()){
+            std::cout<<"glfw failed init, PANIC PANIC!"<<std::endl;
+            return nullptr;
+        }
+        GLFWwindow* window = glfwCreateWindow(WIDTH, HEIGHT, "ray tracer", NULL, NULL);
+        glfwMakeContextCurrent(window);
+        
+        glewExperimental = GL_TRUE;
+        if (glewInit() != GLEW_OK) {
+            std::cerr << "Failed to initialize GLEW." << std::endl;
+            glfwTerminate();
+            return nullptr;
+        }
+        glViewport(0, 0, WIDTH, HEIGHT);
+        return window;
+    };
+    void render() {
+        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+        glMatrixMode(GL_PROJECTION);
+        glLoadIdentity();
+        
+        // Add buffer swap and poll events
         glfwSwapBuffers(window);
         glfwPollEvents();
+    };
+};
+
+struct Planet {
+    double x = WIDTH / 2;
+    double y = HEIGHT / 2;
+    double mass = 40;
+    // constructor
+    // struct planet(vec2 pos, vec2 dir) : x(pos.x), y(pos.y) {
+    // }
+    void draw(const std::vector<Planet>& planets) {
+        glPointSize(50.0f);
+        glColor3f(1.0f, 1.0f, 1.0f);
+        glBegin(GL_POINTS);
+        for (size_t i = 0; i < planets.size(); i++) {
+            glVertex2f(planets[i].x, planets[i].y);
+        }
+        glEnd();
+    };
+    void step(double dx, double dy) {
+        x += DELTA_T*dx;
+        y += DELTA_T*dy;
     }
- 
-    glfwDestroyWindow(window);
- 
+};
+
+int main() {
+    Engine engine;
+    std::vector<Planet> planets = {
+        Planet()
+    };
+    
+    while (!glfwWindowShouldClose(engine.window)) {
+        for (size_t i = 0; i < planets.size(); i++) {
+            planets[i].step(0, 0);  
+        }
+        
+        engine.render();
+        
+        planets[0].draw(planets);  
+    }
+    
+    // Cleanup
     glfwTerminate();
-    exit(EXIT_SUCCESS);
+    return 0;
 }
- 
