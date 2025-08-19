@@ -8,7 +8,7 @@
 #include "linmath.h"
 #define WIDTH 480
 #define HEIGHT 480
-#define DELTA_T 0.001
+#define DELTA_T 0.01
 
 class Engine{
     public:
@@ -34,25 +34,22 @@ class Engine{
         return window;
     };
     void render() {
+        glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
         glMatrixMode(GL_PROJECTION);
         glLoadIdentity();
-        
-        // Add buffer swap and poll events
-        glfwSwapBuffers(window);
-        glfwPollEvents();
     };
 };
 
 struct Planet {
-    double x = WIDTH / 2;
-    double y = HEIGHT / 2;
+    double x = 0.5;
+    double y = 0.5;
     double mass = 40;
     // constructor
     // struct planet(vec2 pos, vec2 dir) : x(pos.x), y(pos.y) {
     // }
     void draw(const std::vector<Planet>& planets) {
-        glPointSize(50.0f);
+        glPointSize(10.0f);
         glColor3f(1.0f, 1.0f, 1.0f);
         glBegin(GL_POINTS);
         for (size_t i = 0; i < planets.size(); i++) {
@@ -73,16 +70,21 @@ int main() {
     };
     
     while (!glfwWindowShouldClose(engine.window)) {
+        glClear(GL_COLOR_BUFFER_BIT);
+
+        // Physics logic
         for (size_t i = 0; i < planets.size(); i++) {
-            planets[i].step(0, 0);  
+            planets[i].step(0, -0.1);  
         }
-        
+
+        // Rendering - order important        
         engine.render();
-        
         planets[0].draw(planets);  
+        
+        // Cleanup stuff
+        glfwSwapBuffers(engine.window);
+        glfwPollEvents();
     }
-    
-    // Cleanup
     glfwTerminate();
     return 0;
 }
