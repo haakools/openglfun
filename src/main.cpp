@@ -42,12 +42,14 @@ class Engine{
 };
 
 struct Planet {
-    double x = 0.5;
-    double y = 0.5;
-    double mass = 40;
+    double x;
+    double y;
+    double m;
+    double r;
     // constructor
-    // struct planet(vec2 pos, vec2 dir) : x(pos.x), y(pos.y) {
-    // }
+    Planet(double x_pos, double y_pos, double mass, double radius ) : x(x_pos), y(y_pos), m(mass), r(radius) {
+    }
+
     void draw(const std::vector<Planet>& planets) {
         glPointSize(10.0f);
         glColor3f(1.0f, 1.0f, 1.0f);
@@ -66,7 +68,8 @@ struct Planet {
 int main() {
     Engine engine;
     std::vector<Planet> planets = {
-        Planet()
+        Planet(0.5, 0.5, 500, 2), 
+        Planet(-0.5, 0.5, 500, 2), 
     };
     
     while (!glfwWindowShouldClose(engine.window)) {
