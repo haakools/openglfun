@@ -11,6 +11,12 @@
 
 #define WIDTH 480
 #define HEIGHT 480
+
+// Making the width and height be 10x lunar distance for space enough
+#define LUNAR_DISTANCE 3.84399e8
+#define WIDTH_M 3.84399e9
+#define HEIGHT_M 3.84399e9
+
 #define DELTA_T 0.000000001
 
 
@@ -40,7 +46,10 @@ typedef struct vec2
         double acc_x = 0.0, double acc_y = 0.0) : pos_x(x), pos_y(y),
                                                   vel_x(vel_x), acc_x(acc_x),
                                                   vel_y(vel_y), acc_y(acc_y)
-    {}
+    {
+        std::cout << "Starting with speed (x, y) -> (" << vel_x << " , " << vel_y << " ) " << std::endl;
+
+    }
 } vec2;
 
 class Engine{
@@ -87,7 +96,10 @@ struct Planet {
         glColor3f(1.0f, 1.0f, 1.0f);
         glBegin(GL_POINTS);
         for (size_t i = 0; i < planets.size(); i++) {
-            glVertex2f(planets[i].motions.pos_x, planets[i].motions.pos_y);
+            // normalizing the coordinates from SI units -->  regular units
+            glVertex2f(
+                planets[i].motions.pos_x/WIDTH_M,
+                planets[i].motions.pos_y/HEIGHT_M);
         }
         glEnd();
     };
@@ -105,6 +117,7 @@ struct Planet {
 
             planets[i].motions.pos_x += planets[i].motions.vel_x * DELTA_T;
             planets[i].motions.pos_y += planets[i].motions.vel_y * DELTA_T;
+            std::cout << "Current speed (x, y) -> (" << planets[i].motions.vel_x << " , " << planets[i].motions.vel_y << " ) " << std::endl;
         }
     };
 
@@ -122,7 +135,6 @@ struct Planet {
             if (i == planet_index) {
                 continue;
             }
-            // this is wrong
             double distance_x = planets[planet_index].motions.pos_x - planets[i].motions.pos_x;
             double distance_y = planets[planet_index].motions.pos_y - planets[i].motions.pos_y;
 
@@ -137,8 +149,8 @@ struct Planet {
 int main() {
     Engine engine;
     std::vector<Planet> planets = {
-        Planet(vec2(-0.5, 0.5), MOON_M, 1), 
-        Planet(vec2(0.5, -0.5), EARTH_M, 1), 
+        Planet(vec2(-0.5*WIDTH_M, -0.5*WIDTH_M), MOON_M, 1), 
+        Planet(vec2(0, 0, 10e4, -10e4), EARTH_M, 1), 
     };
     
     while (!glfwWindowShouldClose(engine.window)) {
