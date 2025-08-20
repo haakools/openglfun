@@ -5,10 +5,43 @@
 // #include <glm/gtc/matrix_transform.hpp>
 // #include <glm/gtc/type_ptr.hpp>
 #include <vector>
-#include "linmath.h"
+#include <tuple>
+#include <cmath>
+#include <cassert>
+
 #define WIDTH 480
 #define HEIGHT 480
-#define DELTA_T 0.01
+#define DELTA_T 0.000000001
+
+
+// physics
+#define MOON_M      7.347e22
+#define EARTH_M     5.972e24
+#define G           6.67430e-11 // gravitational constant
+
+typedef struct vec2
+{
+    // 2d vector used for pos, vel and acc
+    double pos_x;
+    double pos_y;
+
+    // speed
+    double vel_x;
+    double vel_y;
+
+    // acceleration
+    double acc_x;
+    double acc_y;
+
+    // constructor
+    vec2(
+        double x = 0.0, double y = 0.0,
+        double vel_x = 0.0, double vel_y = 0.0,
+        double acc_x = 0.0, double acc_y = 0.0) : pos_x(x), pos_y(y),
+                                                  vel_x(vel_x), acc_x(acc_x),
+                                                  vel_y(vel_y), acc_y(acc_y)
+    {}
+} vec2;
 
 class Engine{
     public:
@@ -42,12 +75,11 @@ class Engine{
 };
 
 struct Planet {
-    double x;
-    double y;
+    vec2 motions;
     double m;
-    double r;
+    double r; // this radius would be for collision detection and visualization
     // constructor
-    Planet(double x_pos, double y_pos, double mass, double radius ) : x(x_pos), y(y_pos), m(mass), r(radius) {
+    Planet(vec2 motions, double mass, double radius ) : motions(motions),  m(mass), r(radius) {
     }
 
     void draw(const std::vector<Planet>& planets) {
@@ -55,30 +87,70 @@ struct Planet {
         glColor3f(1.0f, 1.0f, 1.0f);
         glBegin(GL_POINTS);
         for (size_t i = 0; i < planets.size(); i++) {
-            glVertex2f(planets[i].x, planets[i].y);
+            glVertex2f(planets[i].motions.pos_x, planets[i].motions.pos_y);
         }
         glEnd();
     };
-    void step(double dx, double dy) {
-        x += DELTA_T*dx;
-        y += DELTA_T*dy;
-    }
+
+    void physics_step(std::vector<Planet>& planets) {
+        for (size_t i = 0; i < planets.size(); i++) {
+            // a1 = G m2  /r2
+            // a2 = G m1  /r2
+            std::tuple<double, double> acc = calculate_sum_gravity_pull(planets, i);
+            planets[i].motions.acc_x = std::get<0>(acc);
+            planets[i].motions.acc_y = std::get<1>(acc);
+
+            planets[i].motions.vel_x += planets[i].motions.acc_x * DELTA_T;
+            planets[i].motions.vel_y += planets[i].motions.acc_y * DELTA_T;
+
+            planets[i].motions.pos_x += planets[i].motions.vel_x * DELTA_T;
+            planets[i].motions.pos_y += planets[i].motions.vel_y * DELTA_T;
+        }
+    };
+
+    double planet_distance(const std::vector<Planet>& planets, int planet_1, int planet_2) {
+        assert(planet_1 < planets.size());
+        assert(planet_2 < planets.size());
+        return sqrt(std::pow(planets[planet_1].r,2) + std::pow(planets[planet_2].r, 2));
+    };
+
+    /** helper function/methods */
+    std::tuple<double, double> calculate_sum_gravity_pull(const std::vector<Planet>& planets, int planet_index) {
+        double acc_x = 0;
+        double acc_y = 0;
+        for (size_t i = 0; i < planets.size(); i++) {
+            if (i == planet_index) {
+                continue;
+            }
+            // this is wrong
+            double distance_x = planets[planet_index].motions.pos_x - planets[i].motions.pos_x;
+            double distance_y = planets[planet_index].motions.pos_y - planets[i].motions.pos_y;
+
+            acc_x -= G*planets[i].m * distance_x / std::pow(planet_distance(planets, planet_index, i), 3);
+            acc_y -= G*planets[i].m * distance_y / std::pow(planet_distance(planets, planet_index, i), 3);
+
+        }
+        return std::make_tuple(acc_x, acc_y);
+    };
 };
 
 int main() {
     Engine engine;
     std::vector<Planet> planets = {
-        Planet(0.5, 0.5, 500, 2), 
-        Planet(-0.5, 0.5, 500, 2), 
+        Planet(vec2(-0.5, 0.5), MOON_M, 1), 
+        Planet(vec2(0.5, -0.5), EARTH_M, 1), 
     };
     
     while (!glfwWindowShouldClose(engine.window)) {
         glClear(GL_COLOR_BUFFER_BIT);
 
+
+
         // Physics logic
         for (size_t i = 0; i < planets.size(); i++) {
-            planets[i].step(0, -0.1);  
+            planets[i].physics_step(planets);
         }
+
 
         // Rendering - order important        
         engine.render();
