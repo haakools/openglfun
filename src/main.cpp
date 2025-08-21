@@ -17,7 +17,7 @@
 #define WIDTH_M 3.84399e9
 #define HEIGHT_M 3.84399e9
 
-#define DELTA_T 0.000000001
+#define DELTA_T     0.1
 #define MOON_SPEED  1670000
 #define MOON_R      1.7375e6
 
@@ -163,22 +163,37 @@ void draw(const std::vector<Planet>& planets) {
 
 int main() {
     Engine engine;
+    //std::vector<Planet> planets = {
+    //    Planet(
+    //        vec2(-0.5*WIDTH_M, -0.5*WIDTH_M, MOON_SPEED/2, MOON_SPEED/2), 
+    //        MOON_M, 
+    //        50*MOON_R
+    //    ), 
+    //    Planet(
+    //        vec2( 0.0*WIDTH_M, -0.5*WIDTH_M, MOON_SPEED/2, MOON_SPEED/2),
+    //        MOON_M,
+    //        50*MOON_R
+    //    ), 
+    //    Planet(
+    //        vec2( 0.0*WIDTH_M,  0.0*WIDTH_M, MOON_SPEED*0.0, MOON_SPEED*0.0),
+    //        EARTH_M,
+    //        500*MOON_R
+    //    ), 
+    //};
+   
+    // many planet setup
+    /**
+     * (-,+) | (+,+)
+     * -------
+     * (-,-) | (+, -)
+     */
+
+
     std::vector<Planet> planets = {
-        Planet(
-            vec2(-0.5*WIDTH_M, -0.5*WIDTH_M, MOON_SPEED/2, MOON_SPEED/2), 
-            MOON_M, 
-            50*MOON_R
-        ), 
-        Planet(
-            vec2( 0.0*WIDTH_M, -0.5*WIDTH_M, MOON_SPEED/2, MOON_SPEED/2),
-            MOON_M,
-            50*MOON_R
-        ), 
-        Planet(
-            vec2( 0.0*WIDTH_M,  0.0*WIDTH_M, MOON_SPEED/2, MOON_SPEED/2),
-            EARTH_M,
-            500*MOON_R
-        ), 
+        Planet(vec2(-0.5*WIDTH_M, 0.5*WIDTH_M), 1e6*MOON_M, 50*MOON_R), 
+        Planet(vec2(0.5*WIDTH_M, 0.5*WIDTH_M), 1e6*MOON_M, 50*MOON_R), 
+        Planet(vec2(-0.5*WIDTH_M, -0.5*WIDTH_M), 1e6*MOON_M, 50*MOON_R), 
+        Planet(vec2(+0.5*WIDTH_M, -0.5*WIDTH_M), 1e6*MOON_M, 50*MOON_R), 
     };
     
     while (!glfwWindowShouldClose(engine.window)) {
