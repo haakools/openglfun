@@ -18,7 +18,8 @@
 #define HEIGHT_M 3.84399e9
 
 #define DELTA_T 0.000000001
-
+#define MOON_SPEED  1670000
+#define MOON_R      1.7375e6
 
 // physics
 #define MOON_M      7.347e22
@@ -91,18 +92,32 @@ struct Planet {
     Planet(vec2 motions, double mass, double radius ) : motions(motions),  m(mass), r(radius) {
     }
 
-    void draw(const std::vector<Planet>& planets) {
-        glPointSize(10.0f);
-        glColor3f(1.0f, 1.0f, 1.0f);
-        glBegin(GL_POINTS);
-        for (size_t i = 0; i < planets.size(); i++) {
-            // normalizing the coordinates from SI units -->  regular units
-            glVertex2f(
-                planets[i].motions.pos_x/WIDTH_M,
-                planets[i].motions.pos_y/HEIGHT_M);
+void draw(const std::vector<Planet>& planets) {
+    glColor3f(1.0f, 1.0f, 1.0f);
+    int circ_segments = 30;
+    
+    for (int i = 0; i < planets.size(); i++) {
+        // Normalize coordinates from SI units to screen coordinates
+        float center_x = planets[i].motions.pos_x / WIDTH_M;
+        float center_y = planets[i].motions.pos_y / HEIGHT_M;
+        
+        float radius = planets[i].r / WIDTH_M;
+        
+        glBegin(GL_TRIANGLE_FAN);
+        glVertex2f(center_x, center_y); 
+        
+        for (int j = 0; j <= circ_segments; j++) {  
+            float angle = 2.0f * M_PI * j / circ_segments;
+            float x = center_x + radius * cos(angle);
+            float y = center_y + radius * sin(angle);
+
+            glVertex2f(x, y);
+            std::cout << "Drawing at (x, y) -> (" << x << " , " << y << " ) " << std::endl;
         }
         glEnd();
-    };
+    }
+}
+
 
     void physics_step(std::vector<Planet>& planets) {
         for (size_t i = 0; i < planets.size(); i++) {
@@ -149,20 +164,30 @@ struct Planet {
 int main() {
     Engine engine;
     std::vector<Planet> planets = {
-        Planet(vec2(-0.5*WIDTH_M, -0.5*WIDTH_M), MOON_M, 1), 
-        Planet(vec2(0, 0, 10e4, -10e4), EARTH_M, 1), 
+        Planet(
+            vec2(-0.5*WIDTH_M, -0.5*WIDTH_M, MOON_SPEED/2, MOON_SPEED/2), 
+            MOON_M, 
+            50*MOON_R
+        ), 
+        Planet(
+            vec2( 0.0*WIDTH_M, -0.5*WIDTH_M, MOON_SPEED/2, MOON_SPEED/2),
+            MOON_M,
+            50*MOON_R
+        ), 
+        Planet(
+            vec2( 0.0*WIDTH_M,  0.0*WIDTH_M, MOON_SPEED/2, MOON_SPEED/2),
+            EARTH_M,
+            500*MOON_R
+        ), 
     };
     
     while (!glfwWindowShouldClose(engine.window)) {
         glClear(GL_COLOR_BUFFER_BIT);
 
-
-
         // Physics logic
         for (size_t i = 0; i < planets.size(); i++) {
             planets[i].physics_step(planets);
         }
-
 
         // Rendering - order important        
         engine.render();
