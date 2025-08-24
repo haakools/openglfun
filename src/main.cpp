@@ -132,7 +132,7 @@ void draw(const std::vector<Planet>& planets) {
 
             planets[i].motions.pos_x += planets[i].motions.vel_x * DELTA_T;
             planets[i].motions.pos_y += planets[i].motions.vel_y * DELTA_T;
-            std::cout << "Current speed (x, y) -> (" << planets[i].motions.vel_x << " , " << planets[i].motions.vel_y << " ) " << std::endl;
+            // std::cout << "Current speed (x, y) -> (" << planets[i].motions.vel_x << " , " << planets[i].motions.vel_y << " ) " << std::endl;
         }
     };
 
@@ -189,12 +189,23 @@ int main() {
      */
 
 
-    std::vector<Planet> planets = {
-        Planet(vec2(-0.5*WIDTH_M, 0.5*WIDTH_M), 1e6*MOON_M, 50*MOON_R), 
-        Planet(vec2(0.5*WIDTH_M, 0.5*WIDTH_M), 1e6*MOON_M, 50*MOON_R), 
-        Planet(vec2(-0.5*WIDTH_M, -0.5*WIDTH_M), 1e6*MOON_M, 50*MOON_R), 
-        Planet(vec2(+0.5*WIDTH_M, -0.5*WIDTH_M), 1e6*MOON_M, 50*MOON_R), 
-    };
+    std::vector<Planet> planets;
+    int x_grid = 3;
+    int y_grid = 3;
+
+    std::cout << "setting up grid" << std::endl;
+    for (int i=0; i < x_grid; i++){
+        for (int j=0; j < y_grid; j++) {
+            float x = 2*i/(x_grid-1) - 1;
+            float y = 2*j/(y_grid-1) - 1;
+            std::cout << "coordinates " << x << ", "<<   y << std::endl;
+
+            planets.push_back(
+                Planet(vec2(x * WIDTH_M, y * WIDTH_M, -x*MOON_SPEED, -y*MOON_SPEED), 1e4 * MOON_M, 20 * MOON_R)
+            );
+        }
+    }
+
     
     while (!glfwWindowShouldClose(engine.window)) {
         glClear(GL_COLOR_BUFFER_BIT);
